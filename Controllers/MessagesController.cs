@@ -4,6 +4,7 @@ using ChatDashboard.Api.Data;
 using ChatDashboard.Api.DTOs;
 using ChatDashboard.Api.Services;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ChatDashboard.Api.Controllers
 {
@@ -22,6 +23,7 @@ namespace ChatDashboard.Api.Controllers
             _messageService = messageService;
         }
 
+        [Authorize]
         [HttpGet("received/{userId}")]
         public async Task<IActionResult> GetMessagesReceivedByUser(string userId)
         {
@@ -35,6 +37,7 @@ namespace ChatDashboard.Api.Controllers
             return Ok(messages);
         }
 
+        [Authorize]
         [HttpGet("sent/{userId}")]
         public async Task<IActionResult> GetMessagesSentByUser(string userId)
         {
@@ -48,6 +51,7 @@ namespace ChatDashboard.Api.Controllers
             return Ok(messages);
         }
 
+        [Authorize]
         [HttpGet("{userId}")]
         public async Task<Dictionary<string, List<MessageWithTargetDto>>> GetAllMessagesGroupedForUserAsync(string userId)
         {
@@ -81,6 +85,7 @@ namespace ChatDashboard.Api.Controllers
             return grouped;
         }
 
+        [Authorize]
         [HttpPost("send")]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {

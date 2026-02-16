@@ -4,6 +4,11 @@ using System.Security.Cryptography;
 using System.Text;
 using ChatDashboard.Api.DTOs;
 using ChatDashboard.Api.Services;
+using BCrypt.Net;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using DotNetEnv;
 
 namespace ChatDashboard.Api.Controllers
 {
@@ -95,20 +100,46 @@ namespace ChatDashboard.Api.Controllers
             if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
                 return BadRequest("Username and password are required.");
             
+            // Fetch user from DB (CouchDB)
             var user = await _userLoginService.GetUserByUsername(request.Username);
-            Console.WriteLine("user: ", user);
 
             if(user == null)
                 return Unauthorized("Invalid credentials");
             
+             // Verify password
             if (user.Password != request.Password)
             return Unauthorized("Invalid credentials.");
+
+            //Need to perform hashed passwords
+            // // Verify password (assumes hashed password in DB)
+            // if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password)) 
+            //     return Unauthorized("Invalid credentials.");
+
+            // Generate JWT token
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Environment.GetEnvironmentVariable("JWT_SECRET"); 
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim("id", user._Id),
+                    new Claim("username", user.Username),
+                    new Claim("role", user.Role)
+                }),
+                Expires = DateTime.UtcNow.AddHours(2),
+                SigningCredentials = new SigningCredentials(
+                                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), 
+                                        SecurityAlgorithms.HmacSha256Signature
+                                    )
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
 
             return Ok(new
             {
                 user._Id,
                 user.Username,
-                user.Role
+                user.Role,
+                Token = tokenHandler.WriteToken(token)
             });
         }
     }

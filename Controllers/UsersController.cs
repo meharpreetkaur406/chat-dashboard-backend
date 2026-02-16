@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using ChatDashboard.Api.Data;
 using ChatDashboard.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ChatDashboard.Api.Controllers
 {
@@ -20,6 +21,7 @@ namespace ChatDashboard.Api.Controllers
             _userService = userService;
         }
 
+        [Authorize]
         [HttpGet("users")]
         public async Task<IActionResult> GetUsers()
         {

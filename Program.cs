@@ -1,8 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using ChatDashboard.Api.Services;
 using ChatDashboard.Api.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
+Env.Load();
+
+var key = Environment.GetEnvironmentVariable("JWT_SECRET"); // Keep this in appsettings.json
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -15,6 +22,22 @@ builder.Services.AddHttpClient<UserService>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false,   // can add your issuer
+        ValidateAudience = false, // can add your audience
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+    };
+});
 
 builder.Services.AddSignalR();
 
@@ -30,7 +53,7 @@ builder.Services.AddCors(options =>
             .AllowCredentials();
         });
 });
-
+builder.Services.AddAuthorization();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -41,6 +64,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAngular");
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ChatHub>("/chathub");
 
