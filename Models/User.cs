@@ -31,6 +31,9 @@ namespace ChatDashboard.Api.Models
         [JsonPropertyName("role")]
         public string Role { get; set; }
 
+        [JsonPropertyName("requestedRole")]
+        public string RequestedRole { get; set; }
+
         [JsonPropertyName("status")]
         public string Status { get; set; }
 

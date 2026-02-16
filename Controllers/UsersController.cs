@@ -11,13 +11,11 @@ namespace ChatDashboard.Api.Controllers
     [Route("api")]
     public class UsersController : ControllerBase
     {
-        private readonly AppDbContext _context;
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly UserService _userService;
 
-        public UsersController(AppDbContext context, UserService userService)
+        public UsersController(UserService userService)
         {
-            _context = context;
             _userService = userService;
         }
 

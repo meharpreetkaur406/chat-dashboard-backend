@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using ChatDashboard.Api.DTOs;
 using ChatDashboard.Api.Services;
+using ChatDashboard.Api.Models;
 using BCrypt.Net;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -33,12 +34,12 @@ namespace ChatDashboard.Api.Controllers
                 string.IsNullOrWhiteSpace(request.LastName) ||
                 string.IsNullOrWhiteSpace(request.Email) ||
                 string.IsNullOrWhiteSpace(request.Password) ||
-                string.IsNullOrWhiteSpace(request.Role))
+                string.IsNullOrWhiteSpace(request.RequestedRole))
             {
                 return BadRequest("All fields are required.");
             }
 
-            var userDoc = new
+            var userDoc = new UserDocument
             {
                 _id = Guid.NewGuid().ToString(),
                 type = request?.Type,    
@@ -47,13 +48,14 @@ namespace ChatDashboard.Api.Controllers
                 lastName = request?.LastName,
                 email = request?.Email,
                 password = BCrypt.Net.BCrypt.HashPassword(request?.Password),
-                role = request?.Role,
+                role = (string?)null, //anonymous types in C# are strongly typed at compile time.
+                requestedRole = request?.RequestedRole?.ToLower(),
                 status = "pending",
                 createdAt = DateTime.UtcNow.ToString("o")
             };
 
             await _userRegisterService.CreateUserAsync(userDoc);
-            return Ok(new { message = "User registered successfully" });
+            return Ok(new { message = "Registration request sent to admin for approval" });
         }
 
         [HttpPost("login")]   //Because you are sending sensitive data (password). GET is not safe for credentials.
@@ -102,6 +104,11 @@ namespace ChatDashboard.Api.Controllers
             
             // Fetch user from DB (CouchDB)
             var user = await _userLoginService.GetUserByUsername(request.Username);
+
+            if (user.Status != "approved")
+            {
+                return Unauthorized("Your account is waiting for admin approval");
+            }
 
             if(user == null)
                 return Unauthorized("Invalid credentials");
