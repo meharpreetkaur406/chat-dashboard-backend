@@ -46,7 +46,7 @@ namespace ChatDashboard.Api.Controllers
                 firstName = request?.FirstName,
                 lastName = request?.LastName,
                 email = request?.Email,
-                password = request?.Password,
+                password = BCrypt.Net.BCrypt.HashPassword(request?.Password),
                 role = request?.Role,
                 status = "pending",
                 createdAt = DateTime.UtcNow.ToString("o")
@@ -106,9 +106,28 @@ namespace ChatDashboard.Api.Controllers
             if(user == null)
                 return Unauthorized("Invalid credentials");
             
-             // Verify password
-            if (user.Password != request.Password)
-            return Unauthorized("Invalid credentials.");
+            bool isValidPassword = false;
+
+            // CASE 1: already hashed password
+            if (user.Password.StartsWith("$2"))
+            {
+                isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+            }
+            // CASE 2: old plaintext password (legacy users)
+            else
+            {
+                isValidPassword = user.Password == request.Password;
+
+                // If correct → upgrade to hashed automatically
+                if (isValidPassword)
+                {
+                    user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                    await _userLoginService.UpdateUserPassword(user._Id, user.Password);
+                }
+            }
+            
+            if (!isValidPassword)
+                return Unauthorized("Invalid credentials.");
 
             //Need to perform hashed passwords
             // // Verify password (assumes hashed password in DB)

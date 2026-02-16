@@ -7,6 +7,9 @@ namespace ChatDashboard.Api.Models
         [JsonPropertyName("_id")]
         public string _Id { get; set; }
 
+        [JsonPropertyName("_rev")]
+        public string _Rev { get; set; }
+
         [JsonPropertyName("type")]
         public string Type { get; set; }
 

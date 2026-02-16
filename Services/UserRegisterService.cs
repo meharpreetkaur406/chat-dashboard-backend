@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using ChatDashboard.Api.Models;
+using System.Text.Json;
 
 namespace ChatDashboard.Api.Services 
 {
@@ -61,6 +62,31 @@ namespace ChatDashboard.Api.Services
             Console.WriteLine(result?.Docs?.FirstOrDefault());
 
             return result?.Docs?.FirstOrDefault();
+        }
+
+        public async Task UpdateUserPassword(string userId, string hashedPassword)
+        {
+            var response = await _httpClient.GetAsync($"http://localhost:5984/{_dbName}/{userId}");
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+            var user = JsonSerializer.Deserialize<User>(json, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+            // Update password
+            user.Password = hashedPassword;
+
+            // 3️⃣ Send updated doc back (must include _rev)
+            var content = new StringContent(
+                JsonSerializer.Serialize(user),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            var putResponse = await _httpClient.PutAsync($"http://localhost:5984/{_dbName}/{userId}", content);
+            putResponse.EnsureSuccessStatusCode();
         }
     }
 }
