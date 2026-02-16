@@ -126,7 +126,7 @@ namespace ChatDashboard.Api.Controllers
                     new Claim("username", user.Username),
                     new Claim("role", user.Role)
                 }),
-                Expires = DateTime.UtcNow.AddHours(2),
+                Expires = DateTime.UtcNow.AddMinutes(20),
                 SigningCredentials = new SigningCredentials(
                                         new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), 
                                         SecurityAlgorithms.HmacSha256Signature
