@@ -5,6 +5,7 @@ using ChatDashboard.Api.DTOs;
 using ChatDashboard.Api.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Cryptography;
 
 namespace ChatDashboard.Api.Controllers
 {
@@ -15,13 +16,17 @@ namespace ChatDashboard.Api.Controllers
         private readonly AppDbContext _context;
         private readonly MessagesService _messageService;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly ILogger _logger;
 
 
-        public MessagesController(AppDbContext context, MessagesService messageService)
+        public MessagesController(AppDbContext context, MessagesService messageService, ILogger<MessagesController> logger)
         {
             _context = context;
             _messageService = messageService;
+            _logger = logger;
         }
+
+        /*
 
         [Authorize]
         [HttpGet("received/{userId}")]
@@ -51,29 +56,34 @@ namespace ChatDashboard.Api.Controllers
             return Ok(messages);
         }
 
+        */
         [Authorize]
         [HttpGet("{userId}")]
         public async Task<Dictionary<string, List<MessageWithTargetDto>>> GetAllMessagesGroupedForUserAsync(string userId)
         {
+            var encryptionService = new MessageEncryptionService();
             var messages = await _context.Messages
                 .Join(_context.MessageTargets,
                     m => m.MessageId,
                     mt => mt.MessageId,
                     (m, mt) => new { m, mt })
                 .Where(x => x.m.SenderId == userId || x.mt.TargetId == userId)
-                .Select(x => new MessageWithTargetDto
+                .ToListAsync();
+
+                var decryptedMessages = messages.Select(x => new MessageWithTargetDto
                 {
                     MessageId = x.m.MessageId,
                     SenderId = x.m.SenderId,
-                    MessageBody = x.m.MessageBody,
+                    MessageBody = encryptionService.DecryptMessage(
+                                x.m.EncryptedMessage,
+                                x.m.EncryptedKey,
+                                x.m.HashMessage),
                     CreatedAt = x.m.CreatedAt,
                     TargetId = x.mt.TargetId
-                })
-                .OrderBy(x => x.CreatedAt)
-                .ToListAsync();
+                }).OrderBy(x => x.CreatedAt).ToList();
 
             // Group by conversation key (SenderId + TargetId)
-            var grouped = messages
+            var grouped = decryptedMessages
                 .GroupBy(x =>
                 {
                     // Create a consistent key so that A->B and B->A are in the same group
@@ -99,10 +109,17 @@ namespace ChatDashboard.Api.Controllers
                 return BadRequest("No receiver provided");
 
             Console.WriteLine("request" ,request);
+
+            var encryptionService = new MessageEncryptionService();
+            var (encryptedMsg, encryptedKey, hash) = encryptionService.EncryptMessage(request.MessageBody);
+            _logger.LogInformation("Encrypted message: {EncryptedMessage}", encryptedMsg);
+
             var message = new Message
             {
                 SenderId = request.SenderId,
-                MessageBody = request.MessageBody,
+                EncryptedMessage = encryptedMsg,
+                EncryptedKey = encryptedKey,
+                HashMessage = hash,
                 CreatedAt = DateTime.UtcNow
             };
 

@@ -20,10 +20,14 @@ namespace ChatDashboard.Api.Controllers
         private readonly UserRegisterService _userRegisterService;
         private readonly UserLoginService _userLoginService;
 
-        public AuthController(UserRegisterService userRegisterService, UserLoginService userLoginService)
+        //just to create public key for once
+        private readonly MessageEncryptionService _encryptionService;
+
+        public AuthController(UserRegisterService userRegisterService, UserLoginService userLoginService, MessageEncryptionService encryptionService)
         {
             _userRegisterService = userRegisterService;
             _userLoginService = userLoginService;
+            _encryptionService = encryptionService;
         }
 
         [HttpPost("register")]

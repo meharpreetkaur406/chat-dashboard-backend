@@ -18,6 +18,7 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient<UserRegisterService>();
 builder.Services.AddHttpClient<UserLoginService>();  
 builder.Services.AddScoped<MessagesService>();
+builder.Services.AddScoped<MessageEncryptionService>();
 builder.Services.AddHttpClient<UserService>(); 
 builder.Services.AddHttpClient<AdminService>(); 
 builder.Services.AddDbContext<AppDbContext>(options =>

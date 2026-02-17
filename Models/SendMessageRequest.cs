@@ -1,5 +1,6 @@
 namespace ChatDashboard.Api.DTOs
 {
+    //coming from frontend
     public class SendMessageRequest
     {
         public string SenderId { get; set; }

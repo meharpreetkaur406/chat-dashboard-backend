@@ -21,7 +21,9 @@ namespace ChatDashboard.Api.Data
 
                 entity.Property(e => e.MessageId).HasColumnName("message_id");
                 entity.Property(e => e.SenderId).HasColumnName("sender_id");
-                entity.Property(e => e.MessageBody).HasColumnName("message_body");
+                entity.Property(e => e.EncryptedMessage).HasColumnName("encrypted_message");
+                entity.Property(e => e.EncryptedKey).HasColumnName("encrypted_key");
+                entity.Property(e => e.HashMessage).HasColumnName("hash_message");
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             });
 
