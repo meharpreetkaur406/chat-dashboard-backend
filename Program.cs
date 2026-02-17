@@ -21,6 +21,7 @@ builder.Services.AddScoped<MessagesService>();
 builder.Services.AddScoped<MessageEncryptionService>();
 builder.Services.AddHttpClient<UserService>(); 
 builder.Services.AddHttpClient<AdminService>(); 
+builder.Services.AddHttpClient<AnalyticsService>(); 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
