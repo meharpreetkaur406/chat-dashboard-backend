@@ -34,7 +34,7 @@ namespace ChatDashboard.Api.Controllers
             if (string.IsNullOrWhiteSpace(request.Role))
                 return BadRequest("Role required");
             await _adminService.ApproveUserAsync(id, request.Role.ToLower());
-            return Ok("User approved");
+            return Ok(new { message = "User approved" });
         }
     }
 }
