@@ -6,6 +6,7 @@ using ChatDashboard.Api.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Cryptography;
+using ChatDashboard.Api.Hubs;
 
 namespace ChatDashboard.Api.Controllers
 {
@@ -19,11 +20,12 @@ namespace ChatDashboard.Api.Controllers
         private readonly ILogger _logger;
 
 
-        public MessagesController(AppDbContext context, MessagesService messageService, ILogger<MessagesController> logger)
+        public MessagesController(AppDbContext context, MessagesService messageService, ILogger<MessagesController> logger, IHubContext<ChatHub> hubContext)
         {
             _context = context;
             _messageService = messageService;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         /*
@@ -134,6 +136,16 @@ namespace ChatDashboard.Api.Controllers
 
             _context.MessageTargets.AddRange(targets);
             await _context.SaveChangesAsync();
+
+            if(request.ReceiverIds != null)
+            {
+                foreach (var receiver in request.ReceiverIds)
+                {
+                    await _hubContext.Clients
+                        .User(receiver)
+                        .SendAsync("ReceiveMessage", request.SenderId, request.MessageBody);
+                }
+            }
 
             return Ok();
         }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using ChatDashboard.Api.Data;
 using ChatDashboard.Api.Services;
 using Microsoft.AspNetCore.Authorization;
+using ChatDashboard.Api.Hubs;
 
 namespace ChatDashboard.Api.Controllers
 {

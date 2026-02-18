@@ -109,34 +109,43 @@ namespace ChatDashboard.Api.Services
         // Decrypt message
         public string DecryptMessage(string encryptedMessage, string encryptedKey, string hashMessage)
         {
-            // 1️⃣ Decrypt AES key using RSA private key
-            var encryptedKeyBytes = Convert.FromBase64String(encryptedKey);
-            var aesKeyWithIv = _rsa.Decrypt(encryptedKeyBytes, RSAEncryptionPadding.OaepSHA256);
+            try{
+                // Decrypt AES key using RSA private key
+                var encryptedKeyBytes = Convert.FromBase64String(encryptedKey);
+                var aesKeyWithIv = _rsa.Decrypt(encryptedKeyBytes, RSAEncryptionPadding.OaepSHA256);
 
-            var aesKey = aesKeyWithIv.Take(32).ToArray(); // 256-bit key
-            var aesIV = aesKeyWithIv.Skip(32).ToArray();   // 128-bit IV
+                var aesKey = aesKeyWithIv.Take(32).ToArray(); // 256-bit key
+                var aesIV = aesKeyWithIv.Skip(32).ToArray();   // 128-bit IV
 
-            // 2️⃣ Decrypt message with AES
-            using var aes = Aes.Create();
-            aes.Key = aesKey;
-            aes.IV = aesIV;
+                // Decrypt message with AES
+                using var aes = Aes.Create();
+                aes.Key = aesKey;
+                aes.IV = aesIV;
 
-            var decryptor = aes.CreateDecryptor();
-            var encryptedBytes = Convert.FromBase64String(encryptedMessage);
-            var decryptedBytes = decryptor.TransformFinalBlock(encryptedBytes, 0, encryptedBytes.Length);
+                var decryptor = aes.CreateDecryptor();
+                var encryptedBytes = Convert.FromBase64String(encryptedMessage);
+                var decryptedBytes = decryptor.TransformFinalBlock(encryptedBytes, 0, encryptedBytes.Length);
 
-            var decryptedText = Encoding.UTF8.GetString(decryptedBytes);
+                var decryptedText = Encoding.UTF8.GetString(decryptedBytes);
 
-            // Verify HMAC
-            using var hmac = new HMACSHA256(aesKey);
-            var computedHash = Convert.ToBase64String(
-                hmac.ComputeHash(encryptedBytes)
-            );
+                // Verify HMAC
+                using var hmac = new HMACSHA256(aesKey);
+                var computedHash = Convert.ToBase64String(
+                    hmac.ComputeHash(encryptedBytes)
+                );
 
-            if (computedHash != hashMessage)
-                throw new Exception("Message tampered or corrupted");
+                if (computedHash != hashMessage) {
+                    Console.WriteLine($"Message hash mismatch: {encryptedMessage}");
+                    return null; // Skip corrupted message
+                }
 
-            return decryptedText;
+                return decryptedText;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to decrypt message: {ex.Message}");
+                return null; // Skip corrupted message
+            }
         }
 
         public string ComputeHash(string plainMessage)
